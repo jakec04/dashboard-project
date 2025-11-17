@@ -1,0 +1,603 @@
+---
+title: "Spatial Analysis Dashboard"
+subtitle: "Chicago Health Indicators"
+format: 
+  dashboard:
+    theme: flatly
+    orientation: rows
+    expandable: true
+    scrolling: false
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| label: Activate necessary R packages
+#| eval: true
+#| echo: false
+
+library(dplyr) # data wrangling with pipe syntax
+library(tidyverse) # data wrangling
+library(sf) # simple features geometry data
+library(spdep) # spatial dependence for spatial analysis
+library(purrr) # functional programming
+library(tidyr) # data wrangling
+library(leaflet) # interactive map making
+library(leaflet.extras) # extra functionality for leaflet maps
+library(plotly) # make interactive charts
+library(healthatlas) # health atlas package
+library(rgeoda) # spatial analysis package
+library(corrplot) # correlation plot
+library(broom) # statistical objects
+
+# Define dashboard data file path
+file_path <- "data/dashboard_data.RData"
+
+# Load dashboard data from RData file if it exists
+if (file.exists(file_path)) {
+  load(file_path)
+}
+
+```
+
+```{r}
+#| label: Import data from Chicago Health Atlas, create RData file
+#| eval: false
+#| echo: false
+
+# set the current atlas to the Chicago Health Atlas using the provided URL
+ha_set("chicagohealthatlas.org")
+
+# import community area boundaries from chicago data portal
+community_areas <- st_read("https://data.cityofchicago.org/resource/igwz-8jzy.geojson") %>% 
+  mutate(geoid = as.numeric(area_numbe),
+         name = str_to_title(community)) %>%
+  select(geoid, name)
+
+# import city of chicago boundary from chicago data portal
+chicago_boundary <- st_read("https://data.cityofchicago.org/resource/qqq8-j68g.geojson") %>% 
+  select(name)
+
+## BEGIN EDIT 
+# define topic, period, and population keys to extract latest data from health atlas
+# make sure that the indicators in the topic_keys_list and topic_cols_list are in the same order.
+topic_keys_list = c("VRDTHR","MEODR", "INC", "HCSNSP")
+topic_cols_list = c("all_mortality", "opioid_mortality","md_hh_income","perceived_safety")
+period_keys_list = c("2023", "2019-2023", "2023-2024")
+## END EDIT
+
+# create a rename to rename topics to more descriptive names
+rename_map_names <- setNames(topic_cols_list, topic_keys_list)
+
+# Use the coverage information to filter and select specific data year
+# select and rename essential columns
+community_area_data_table <- ha_data(
+  topic_key = topic_keys_list,
+  population_key = "",
+  # full population
+  period_key = period_keys_list,
+  layer_key = "neighborhood"
+) %>%
+  mutate(topic_key = recode(topic_key, !!!rename_map_names)) %>%
+  select(geoid, topic_key, period_key, value) %>%
+  ungroup() %>%
+  pivot_wider(names_from = c(topic_key, period_key),
+              values_from = value) %>%
+  rename_with( ~ sub("_[^_]+$", "", .x), -geoid) %>%
+  mutate(across(2:5, ~ dplyr::ntile(.x, 5), .names = "{.col}_q5")) %>%
+  mutate(across(6:9, ~ factor(
+    .x,
+    levels = 1:5,
+    labels = c("lowest", "low", "medium", "high", "highest"),
+    ordered = TRUE
+  ))) %>%
+  mutate(geoid = as.numeric(str_replace(geoid, pattern = "1714000-", ""))) %>%
+  left_join(community_areas, by = "geoid") %>%
+  st_as_sf()
+
+# save dashboard data file
+save(community_area_data_table, community_areas, chicago_boundary, file = "data/dashboard_data.RData")
+
+```
+
+```{r}
+#| label: Functions for creating custom maps and charts
+#| eval: true
+#| echo: false
+
+# Function for creating custom choropleth maps using variable input
+fx_custom_choropleth_map <- function(var, map_color, map_title) {
+  # specify quintile variable name
+  var_q5 <- paste0(var, "_q5")
+  
+  # create color palette
+  # specify value column
+  pal <- colorFactor(
+    palette = map_color,
+    domain = (community_area_data_table[[var_q5]]),
+    # EDIT HERE
+    na.color = "#CCCCCC"
+  )
+  
+  # configure labels
+  labels <- sprintf(
+    "<strong>%s</strong><br/>
+  Rate: %0.1f",
+  community_area_data_table$name,
+  community_area_data_table[[var]]
+  ) %>% # EDIT HERE (rates, not quintiles)
+    lapply(htmltools::HTML)
+  
+  # add polygons to leaflet map
+  leaflet(community_area_data_table) %>%
+    addProviderTiles(providers$CartoDB.Positron, group = "Positron (minimal)") %>%
+    addPolygons(
+      fillColor = ~ pal(get(var_q5)),
+      # EDIT HERE
+      weight = 0.5,
+      opacity = 0.75,
+      color = "white",
+      fillOpacity = 0.75,
+      label = ~ labels
+    ) %>%
+    addPolylines(
+      data = chicago_boundary,
+      stroke = TRUE,
+      weight = 2,
+      opacity = 1,
+      fillOpacity = 0,
+      color = "Black",
+      group = "City of Chicago"
+    ) %>%
+    addLegend(
+      position = "bottomleft",
+      pal = pal,
+      values = ~ get(var_q5),
+      # EDIT HERE
+      title = map_title,
+      # EDIT HERE
+      opacity = 1
+    ) %>%
+    addResetMapButton()
+}
+
+# Function for creating custom LISA map using variable input
+fx_custom_lisa_map <- function(var) {
+  # remove NAs from data table
+  community_area_data_table_lisa <- community_area_data_table %>%
+    drop_na(all_of(var))
+  
+  # calculate LISA scores using queen contiguity weights
+  w.queen <- queen_weights(community_area_data_table_lisa)
+  
+  # compute LISA scores
+  lisa.queen <- local_moran(w.queen, community_area_data_table_lisa[var], permutations = 999)
+  
+  # create color, label, and cluster objects for plotting
+  lisa_clusters <- lisa_clusters(lisa.queen)
+  lisa_colors <- lisa_colors(lisa.queen)
+  lisa_labels <- lisa_labels(lisa.queen)
+  lisa_categories <- c(0:6) %>%
+    as.data.frame() %>%
+    bind_cols(lisa_labels, lisa_colors) %>%
+    rename(
+      cluster_number = 1,
+      cluster_label = 2,
+      cluster_color = 3
+    )
+  
+  # add LISA scores to community area table
+  aLISA_table <- community_area_data_table_lisa %>%
+    bind_cols(lisa_cluster = lisa_clusters) %>%
+    left_join(lisa_categories, by = c("lisa_cluster" = "cluster_number"))
+  
+  # create palette for map
+  palette <- aLISA_table %>%
+    st_drop_geometry() %>%
+    distinct(lisa_cluster, cluster_label, cluster_color) %>%
+    arrange(lisa_cluster)
+  
+  # configure labels
+  labels <- sprintf(
+    "<strong>%s</strong><br/>
+  Cluster type: %s<br/>
+  Value: %0.1f",
+  aLISA_table$name,
+  aLISA_table$cluster_label,
+  aLISA_table[[var]]
+  ) %>%
+    lapply(htmltools::HTML)
+  
+  # add polygons to leaflet map
+  leaflet(aLISA_table) %>%
+    addProviderTiles(providers$CartoDB.Positron, group = "Positron (minimal)") %>%
+    addPolygons(
+      fillColor = ~ cluster_color,
+      # EDIT HERE
+      weight = 0.5,
+      opacity = 0.75,
+      color = "white",
+      fillOpacity = 0.75,
+      label = labels
+    ) %>%
+    addPolylines(
+      data = chicago_boundary,
+      stroke = TRUE,
+      weight = 2,
+      opacity = 1,
+      fillOpacity = 0,
+      color = "Black",
+      group = "City of Chicago"
+    ) %>%
+    addLegend(
+      position = "bottomleft",
+      colors = palette$cluster_color,
+      # vector of hex codes
+      labels = palette$cluster_label,
+      title = "Cluster Type",
+      opacity = 1
+    )  %>%
+    addResetMapButton()
+}
+```
+
+# Mortality
+## Row {height=10%}
+
+Description of mortality indicators, maps and charts. Include why you chose the indicators, what they show, and any other relevant information.
+
+## Row {height=60%}
+### Column
+```{r}
+#| label: Mortality Map 1
+#| title: All-Cause Mortality Rate (per 100,000), 2023 # EDIT HERE
+#| eval: true
+
+# Create custom choropleth map using specified parameters
+# BEGIN EDITING
+var <- "all_mortality" # specify variable to map
+map_color <- "Blues" # specify color range for map
+map_title <- "Mortality Rate" # specify map title
+# STOP EDITING
+
+fx_custom_choropleth_map(var, map_color, map_title)
+
+```
+
+### Column
+```{r}
+#| label: Mortality Map 2
+#| title: Opioid-Related Overdose Mortality Rate (per 100,000), 2023 # EDIT HERE
+#| eval: true
+
+# Create custom choropleth map using specified parameters
+# BEGIN EDITING
+var <- "opioid_mortality" # specify variable to map
+map_color <- "Blues" # specify color range for map
+map_title <- "Mortality Rate" # specify map title
+# STOP EDITING
+
+fx_custom_choropleth_map(var, map_color, map_title)
+
+```
+
+## Row {height=30%}
+### Column
+```{r}
+#| label: Mortality Histogram 1
+#| title: Histogram
+#| eval: true
+
+df <- community_area_data_table %>%
+  st_set_geometry(NULL) %>%
+  transmute(all_mortality = as.numeric(all_mortality)) %>% # EDIT HERE (two values)
+  filter(is.finite(all_mortality)) # EDIT HERE
+
+plot_ly(
+  df,
+  x = ~all_mortality, # EDIT HERE
+  type = "histogram",
+  nbinsx = 20,
+  marker = list(color = "#3182bd",
+                line = list(color = "rgba(0,0,0,0.25)", width = 0.5))
+) %>%
+  layout(
+    xaxis = list(title = "Rate (per 100,000)"),
+    yaxis = list(title = "Count"),
+    bargap = 0.05,
+    showlegend = FALSE
+  )
+
+```
+
+### Column
+```{r}
+#| label: Mortality Histogram 2
+#| title: Histogram
+#| eval: true
+
+
+df <- community_area_data_table %>%
+  st_set_geometry(NULL) %>%
+  transmute(opioid_mortality = as.numeric(opioid_mortality)) %>% # EDIT HERE (two values)
+  filter(is.finite(opioid_mortality)) # EDIT HERE
+
+plot_ly(
+  df,
+  x = ~opioid_mortality, # EDIT HERE
+  type = "histogram",
+  nbinsx = 20,
+  marker = list(color = "#3182bd",
+                line = list(color = "rgba(0,0,0,0.25)", width = 0.5))
+) %>%
+  layout(
+    xaxis = list(title = "Rate (per 100,000)"),
+    yaxis = list(title = "Count"),
+    bargap = 0.05,
+    showlegend = FALSE
+  )
+
+```
+
+# SDOH
+## Row {height=10%}
+
+Description of social determinants of health (SDOH) indicators, maps and charts. Include why you chose the indicators, what they show, and any other relevant information.
+
+## Row {height=60%}
+
+### Column
+```{r}
+#| label: SDOH Map 1
+#| title: Median Household Income, 2019-2023 # EDIT HERE
+#| eval: true
+
+# Create custom choropleth map using specified parameters
+# BEGIN EDITING
+var <- "md_hh_income" # specify variable to map
+map_color <- "Oranges" # specify color range for map
+map_title <- "Household Income" # specify map title
+# STOP EDITING
+
+fx_custom_choropleth_map(var, map_color, map_title)
+
+```
+
+### Column
+```{r}
+#| label: SDOH Map 2
+#| title: "Perceived Neighborhood Safety Rate, 2023-2024" # EDIT HERE
+#| eval: true
+
+# Create custom choropleth map using specified parameters
+# BEGIN EDITING
+var <- "perceived_safety" # specify variable to map
+map_color <- "Oranges" # specify color range for map
+map_title <- "Perceived Safety" # specify map title
+# STOP EDITING
+
+fx_custom_choropleth_map(var, map_color, map_title)
+
+```
+
+## Row {height=30%}
+### Column
+```{r}
+#| label: Histogram SDOH 1
+#| title: Histogram
+#| eval: true
+
+df <- community_area_data_table %>%
+  st_set_geometry(NULL) %>%
+  transmute(md_hh_income = as.numeric(md_hh_income)) %>% # EDIT HERE  (two values)
+  filter(is.finite(md_hh_income)) # EDIT HERE
+
+plot_ly(
+  df,
+  x = ~md_hh_income, # EDIT HERE
+  type = "histogram",
+  nbinsx = 20,
+  marker = list(color = "#A63603",
+                line = list(color = "#FDBE85", width = 0.5))
+) %>%
+  layout(
+    xaxis = list(title = "Income"), # EDIT HERE
+    yaxis = list(title = "Count"),
+    bargap = 0.05,
+    showlegend = FALSE
+  )
+
+
+
+```
+
+### Column
+```{r}
+#| label: Histogram SDOH 2
+#| title: Histogram
+#| eval: true
+
+
+df <- community_area_data_table %>%
+  st_set_geometry(NULL) %>%
+  transmute(perceived_safety = as.numeric(perceived_safety)) %>% # EDIT HERE (two values)
+  filter(is.finite(perceived_safety)) # EDIT HERE
+
+plot_ly(
+  df,
+  x = ~perceived_safety, # EDIT HERE
+  type = "histogram",
+  nbinsx = 20,
+  marker = list(color = "#A63603",
+                line = list(color = "#FDBE85", width = 0.5))
+) %>%
+  layout(
+    xaxis = list(title = "Rate (%)"), # EDIT HERE
+    yaxis = list(title = "Count"),
+    bargap = 0.05,
+    showlegend = FALSE
+  )
+
+```
+
+# Spatial Analysis
+
+```{r}
+#| label: Data preparation
+#| eval: true
+#| echo: false
+
+# select relevant variables for spatial analysis
+vars <- c("all_mortality", "opioid_mortality", "md_hh_income", "perceived_safety") # EDIT HERE
+
+```
+
+## Row {height=20%}
+The following analyses include a bivariate correlation and Global Moran’s I plot that examine statistical relationships between the selected health outcome and social determinants of health (SDOH) indicators. Additionally, Local Indicators of Spatial Association (LISA) maps are presented for each variable to visualize areas where statistically significant spatial clustering occurs. Together, these analyses help identify both the strength of associations between indicators and the geographic patterns that may reveal underlying spatial inequities across the study area.
+
+## Row {height=80%}
+### Column {.tabset}
+```{r}
+#| label: Bivariate Correlations (Pearson)
+#| title: "Bivariate Correlation Matrix"
+#| eval: true
+#| echo: false
+
+# calculate bivariate correlations
+correlation_matrix <- community_area_data_table %>% 
+  st_drop_geometry() %>%
+  select(all_of(vars)) %>%
+  cor(use = "pairwise.complete.obs", method = "pearson")
+
+# create (non-spatial) correlation plot
+correlation_plot <- corrplot(correlation_matrix, 
+method="number", 
+col=c("#2c7bb6","white"), 
+order="hclust", 
+bg="lightgrey", 
+tl.col = "grey")
+
+```
+
+```{r}
+#| label: Global Moran's I
+#| title: Global Moran's I
+#| eval: true
+#| echo: false
+
+# generate neighborhood index and weights (Queen level)
+nb <- poly2nb(st_geometry(community_area_data_table))
+lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
+
+# calculate Global Moran's I for each variable using queen weights matrix
+global_moran_tbl <- tibble(variable = vars) %>%
+  mutate(test = map(variable, ~ moran.test(community_area_data_table[[.x]], lw,
+                                           randomisation = TRUE,
+                                           alternative = "greater",
+                                           na.action = na.exclude,
+                                           zero.policy = TRUE))) %>%
+  mutate(tidy = map(test, tidy)) %>%
+  select(variable, tidy) %>%
+  unnest_wider(tidy)
+
+# create a plotly chart showing Global Mornan's I results
+plot_ly(global_moran_tbl,
+        x = ~reorder(variable, estimate1),
+        y = ~estimate1,
+        type = "bar",
+        color = ~ifelse(p.value < 0.05, "Significant", "Not significant"),
+        colors = c("Significant" = "#2c7bb6", "Not significant" = "lightgray"),
+        hoverinfo = "text",
+        text = ~paste(
+          "<b>", variable, "</b><br>",
+          "Moran’s I: ", round(estimate1, 3), "<br>",
+          "Expected: ", round(estimate2, 3), "<br>",
+          "p = ", signif(p.value, 3)
+        )) %>%
+  layout(
+    xaxis = list(title = ""),
+    yaxis = list(title = "Global Moran’s I")
+  )
+
+```
+
+### Column {.tabset}
+```{r}
+#| title: All Mortality
+#| eval: true
+#| echo: false
+
+# Create custom LISA map using specified variable
+var = "all_mortality"  # EDIT HERE: choose one variable from vars
+
+# Execute custom LISA map function
+fx_custom_lisa_map(var) 
+
+```
+
+```{r}
+#| title: Opioid Mortality 
+#| eval: true
+#| echo: false
+
+# Create custom LISA map using specified variable
+var = "opioid_mortality"  # EDIT HERE: choose one variable from vars
+
+# Execute custom LISA map function
+fx_custom_lisa_map(var) 
+
+```
+
+```{r}
+#| title: Household Income
+#| eval: true
+#| echo: false
+
+# Create custom LISA map using specified variable
+var = "md_hh_income"  # EDIT HERE: choose one variable from vars
+
+# Execute custom LISA map function
+fx_custom_lisa_map(var) 
+
+```
+
+```{r}
+#| title: Perceived Safety
+#| eval: true
+#| echo: false
+
+# Create custom LISA map using specified variable
+var = "perceived_safety"  # EDIT HERE: choose one variable from vars
+
+# Execute custom LISA map function
+fx_custom_lisa_map(var) 
+
+
+```
+
+# Summary of Findings
+## Row {height=100%}
+
+In this section, provide a concise overview of the data and analyses completed for this assignment. Your summary should include:
+
+1. **Indicator Description**  
+   Describe the *public health outcome* and *social determinants of health (SDOH)* indicators you selected, along with their associated *data sources* (e.g., the *Chicago Health Atlas*).
+
+2. **Geographic Patterns and Trends**  
+   Summarize the *geographic distributions and temporal trends* observed for each indicator, referencing the *maps* and *charts* presented on the **Mortality** and **SDOH** pages of your dashboard.
+
+3. **Spatial Analysis and Interpretation**  
+   Explain the *methods* used in your spatial analyses and provide a brief *interpretation of key findings* as presented on the corresponding dashboard page. Highlight any significant spatial relationships or clusters that emerge from your analysis.
+
+Your written summary should be approximately **250 words** and clearly connect your data sources, spatial findings, and their broader *public health implications*.
+
+```{r}
+#| label: write dataset to shapefile
+#| eval: false
+
+# use for writing data to shapefile for Exercise #3
+st_write(community_area_data_table, "data/community_area_data_table.shp")
+```
+
+

@@ -41,7 +41,6 @@ if (file.exists(file_path)) {
 
 ```
 
-
 ```{r}
 #| label: Import data from Chicago Health Atlas, create RData file
 #| eval: false
@@ -244,12 +243,15 @@ fx_custom_lisa_map <- function(var) {
 ```
 
 # Mortality
-## Row {height=10%}
 
-The mortality indicators, adult diabetes rate and life expectancy, were selected because they reflect core health outcomes that reveal significant disparities across Chicago neighborhoods. Diabetes is a chronic illness that can be (in some cases) prevented, and be a very manageable disease with adequate healthcare. While life expectancy provides a broad measure of longevity.  Mapping these indicators shows clear spatial patterns of inequity, identifying areas where poor health outcomes are concentrated. 
+## Row {height="10%"}
 
-## Row {height=60%}
+The mortality indicators, adult diabetes rate and life expectancy, were selected because they reflect core health outcomes that reveal significant disparities across Chicago neighborhoods. Diabetes is a chronic illness that can be (in some cases) prevented, and be a very manageable disease with adequate healthcare. While life expectancy provides a broad measure of longevity. Mapping these indicators shows clear spatial patterns of inequity, identifying areas where poor health outcomes are concentrated.
+
+## Row {height="60%"}
+
 ### Column
+
 ```{r}
 #| label: Diabetes Map 1
 #| title: Rate of Diabetes, 2023-24 # EDIT HERE
@@ -267,6 +269,7 @@ fx_custom_choropleth_map(var, map_color, map_title)
 ```
 
 ### Column
+
 ```{r}
 #| label: Life Expectancy
 #| title: Life Expectancy, 2020  # EDIT HERE
@@ -283,8 +286,10 @@ fx_custom_choropleth_map(var, map_color, map_title)
 
 ```
 
-## Row {height=30%}
+## Row {height="30%"}
+
 ### Column
+
 ```{r}
 #| label: Diabetes Histogram 1
 #| title: Diabetes Histogram
@@ -313,6 +318,7 @@ plot_ly(
 ```
 
 ### Column
+
 ```{r}
 #| label: Life Expectancy Histogram 2
 #| title: Life Expectancy Histogram
@@ -342,13 +348,15 @@ plot_ly(
 ```
 
 # SDOH
-## Row {height=10%}
 
-The SDOH indicators—primary care provider rate and food insecurity—capture key social and economic conditions that influence community health. The primary care provider rate reflects access to routine and preventive care, while food insecurity reflects neighborhoods with limited or uncertain access to adequate food. Mapping these measures shows where structural barriers are concentrated across Chicago. 
+## Row {height="10%"}
 
-## Row {height=60%}
+The SDOH indicators—primary care provider rate and food insecurity—capture key social and economic conditions that influence community health. The primary care provider rate reflects access to routine and preventive care, while food insecurity reflects neighborhoods with limited or uncertain access to adequate food. Mapping these measures shows where structural barriers are concentrated across Chicago.
+
+## Row {height="60%"}
 
 ### Column
+
 ```{r}
 #| label: SDOH Map 1
 #| title: Primary Care Provider Rate, 2023-2024 # EDIT HERE
@@ -366,6 +374,7 @@ fx_custom_choropleth_map(var, map_color, map_title)
 ```
 
 ### Column
+
 ```{r}
 #| label: SDOH Map 2
 #| title: "Food Insecurity Rate, 2020" # EDIT HERE
@@ -382,8 +391,10 @@ fx_custom_choropleth_map(var, map_color, map_title)
 
 ```
 
-## Row {height=30%}
+## Row {height="30%"}
+
 ### Column
+
 ```{r}
 #| label: Histogram SDOH 1
 #| title: Primary Care Provider Histogram
@@ -414,6 +425,7 @@ plot_ly(
 ```
 
 ### Column
+
 ```{r}
 #| label: Histogram SDOH 2
 #| title: Food Insecurity Histogram
@@ -454,11 +466,14 @@ vars <- c("diabetes_rate", "life_expect", "pcp_rate", "food_insecure") # EDIT HE
 
 ```
 
-## Row {height=20%}
+## Row {height="20%"}
+
 The following analyses include a bivariate correlation and Global Moran’s I plot that examine statistical relationships between the selected health outcome and social determinants of health (SDOH) indicators. Additionally, Local Indicators of Spatial Association (LISA) maps are presented for each variable to visualize areas where statistically significant spatial clustering occurs. Together, these analyses help identify both the strength of associations between indicators and the geographic patterns that may reveal underlying spatial inequities across the study area.
 
-## Row {height=80%}
+## Row {height="80%"}
+
 ### Column {.tabset}
+
 ```{r}
 #| label: Bivariate Correlations (Pearson)
 #| title: "Bivariate Correlation Matrix"
@@ -524,6 +539,7 @@ plot_ly(global_moran_tbl,
 ```
 
 ### Column {.tabset}
+
 ```{r}
 #| title: All Mortality
 #| eval: true
@@ -578,16 +594,16 @@ fx_custom_lisa_map(var)
 ```
 
 # Summary of Findings
-## Row {height=100%}
 
-The public health outcomes are diabetes rate and life expectancy, and the social determinant of health are the rate of individuals which have a primary care provider and the rate of individuals facing food insecurity. Diabetes rate and primary care provider rate were collected by the City of Chicago through a Healthy Chicago survey. Life expectancy data is provided by the Illinois Department of Public Health’s death records and Food insecurity is from a Feeding America projection. The indicators are aggregated by the Chicago Health Atlas.  
+## Row {height="100%"}
 
-Across the indicators displayed on the dashboard, clear geographic patterns emerge that show a persistent North and South /Southwest divide in health outcomes across Chicago. Life expectancy, primary care access and diabetes prevalence each display strong spatial gradients. Neighborhoods on the North and Northwest Sides consistently fall into the highest categories of life expectancy and provider usage, while showing the lowest rates of food insecurity and chronic disease. 
+The public health outcomes are diabetes rate and life expectancy, and the social determinant of health are the rate of individuals which have a primary care provider and the rate of individuals facing food insecurity. Diabetes rate and primary care provider rate were collected by the City of Chicago through a Healthy Chicago survey. Life expectancy data is provided by the Illinois Department of Public Health’s death records and Food insecurity is from a Feeding America projection. The indicators are aggregated by the [Chicago Health Atlas](https://chicagohealthatlas.org/).
 
-In contrast, large portions of the South and Southwest Sides appear in the highest-risk categories for food insecurity and diabetes and in the lowest categories for life expectancy and primary care access. These patterns are reinforced by the histograms, which show wide variation across tracts, and by the LISA mortality map, which identifies significant High-High mortality clusters largely in the South and Low-Low mortality clusters along the North Lakefront. 
+Across the [indicators displayed on the dashboard](https://jakec04.github.io/dashboard-project/#mortality), clear geographic patterns emerge that show a persistent North and South/Southwest divide in health outcomes across Chicago. Life expectancy, primary care access and diabetes prevalence each display strong spatial gradients. Neighborhoods on the North and Northwest Sides consistently fall into the highest categories of life expectancy and provider usage, while showing the lowest rates of food insecurity and chronic disease.
 
-The spatial analyses further illustrate these disparities. Global Moran’s I values show that food insecurity and life expectancy are highly clustered, while diabetes and primary care access show moderate to weaker clustering. Local Moran’s I identifies the specific neighborhoods where those clusters occur, consistent concentrations of elevated mortality on the Southside. 
+In contrast, large portions of the South and Southwest Sides appear in the highest-risk categories for food insecurity and diabetes and in the lowest categories for life expectancy and primary care access. These patterns are reinforced by the histograms, which show wide variation across tracts, and [by the LISA mortality map](https://jakec04.github.io/dashboard-project/#spatial-analysis), which identifies significant High-High mortality clusters largely in the South and Low-Low mortality clusters along the North Lakefront.
 
+The spatial analyses further illustrate these disparities. Global Moran’s I values show that food insecurity and life expectancy are highly clustered, while diabetes and primary care access show moderate to weaker clustering. [Local Moran’s](https://jakec04.github.io/dashboard-project/#spatial-analysis) I identifies the specific neighborhoods where those clusters occur, consistent concentrations of elevated mortality on the South side.
 
 ```{r}
 #| label: write dataset to shapefile
@@ -596,5 +612,3 @@ The spatial analyses further illustrate these disparities. Global Moran’s I va
 # use for writing data to shapefile for Exercise #3
 st_write(community_area_data_table, "data/community_area_data_table.shp")
 ```
-
-

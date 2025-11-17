@@ -580,18 +580,14 @@ fx_custom_lisa_map(var)
 # Summary of Findings
 ## Row {height=100%}
 
-In this section, provide a concise overview of the data and analyses completed for this assignment. Your summary should include:
+The public health outcomes are diabetes rate and life expectancy, and the social determinant of health are the rate of individuals which have a primary care provider and the rate of individuals facing food insecurity. Diabetes rate and primary care provider rate were collected by the City of Chicago through a Healthy Chicago survey. Life expectancy data is provided by the Illinois Department of Public Health’s death records and Food insecurity is from a Feeding America projection. The indicators are aggregated by the Chicago Health Atlas.  
 
-1. **Indicator Description**  
-   Describe the *public health outcome* and *social determinants of health (SDOH)* indicators you selected, along with their associated *data sources* (e.g., the *Chicago Health Atlas*).
+Across the indicators displayed on the dashboard, clear geographic patterns emerge that show a persistent North and South /Southwest divide in health outcomes across Chicago. Life expectancy, primary care access and diabetes prevalence each display strong spatial gradients. Neighborhoods on the North and Northwest Sides consistently fall into the highest categories of life expectancy and provider usage, while showing the lowest rates of food insecurity and chronic disease. 
 
-2. **Geographic Patterns and Trends**  
-   Summarize the *geographic distributions and temporal trends* observed for each indicator, referencing the *maps* and *charts* presented on the **Mortality** and **SDOH** pages of your dashboard.
+In contrast, large portions of the South and Southwest Sides appear in the highest-risk categories for food insecurity and diabetes and in the lowest categories for life expectancy and primary care access. These patterns are reinforced by the histograms, which show wide variation across tracts, and by the LISA mortality map, which identifies significant High-High mortality clusters largely in the South and Low-Low mortality clusters along the North Lakefront. 
 
-3. **Spatial Analysis and Interpretation**  
-   Explain the *methods* used in your spatial analyses and provide a brief *interpretation of key findings* as presented on the corresponding dashboard page. Highlight any significant spatial relationships or clusters that emerge from your analysis.
+The spatial analyses further illustrate these disparities. Global Moran’s I values show that food insecurity and life expectancy are highly clustered, while diabetes and primary care access show moderate to weaker clustering. Local Moran’s I identifies the specific neighborhoods where those clusters occur, consistent concentrations of elevated mortality on the Southside. 
 
-Your written summary should be approximately **250 words** and clearly connect your data sources, spatial findings, and their broader *public health implications*.
 
 ```{r}
 #| label: write dataset to shapefile

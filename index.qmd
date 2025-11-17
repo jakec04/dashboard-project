@@ -351,7 +351,7 @@ plot_ly(
 
 ## Row {height="10%"}
 
-The SDOH indicators—primary care provider rate and food insecurity—capture key social and economic conditions that influence community health. The primary care provider rate reflects access to routine and preventive care, while food insecurity reflects neighborhoods with limited or uncertain access to adequate food. Mapping these measures shows where structural barriers are concentrated across Chicago.
+The SDOH indicators, primary care provider rate and food insecurity, capture key social and economic conditions that influence community health. The primary care provider rate reflects access to routine and preventive care, while food insecurity reflects neighborhoods with limited or uncertain access to adequate food. Mapping these measures shows where structural barriers are concentrated across Chicago.
 
 ## Row {height="60%"}
 

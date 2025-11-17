@@ -1,0 +1,7 @@
+project:
+  type: website
+  output-dir: docs   # GitHub Pages will serve from here
+
+format:
+  html:
+    theme: flatly

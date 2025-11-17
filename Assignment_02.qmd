@@ -246,7 +246,7 @@ fx_custom_lisa_map <- function(var) {
 # Mortality
 ## Row {height=10%}
 
-Description of mortality indicators, maps and charts. Include why you chose the indicators, what they show, and any other relevant information.
+The mortality indicators, adult diabetes rate and life expectancy, were selected because they reflect core health outcomes that reveal significant disparities across Chicago neighborhoods. Diabetes is a chronic illness that can be (in some cases) prevented, and be a very manageable disease with adequate healthcare. While life expectancy provides a broad measure of longevity.  Mapping these indicators shows clear spatial patterns of inequity, identifying areas where poor health outcomes are concentrated. 
 
 ## Row {height=60%}
 ### Column
@@ -344,7 +344,7 @@ plot_ly(
 # SDOH
 ## Row {height=10%}
 
-Description of social determinants of health (SDOH) indicators, maps and charts. Include why you chose the indicators, what they show, and any other relevant information.
+The SDOH indicators—primary care provider rate and food insecurity—capture key social and economic conditions that influence community health. The primary care provider rate reflects access to routine and preventive care, while food insecurity reflects neighborhoods with limited or uncertain access to adequate food. Mapping these measures shows where structural barriers are concentrated across Chicago. 
 
 ## Row {height=60%}
 

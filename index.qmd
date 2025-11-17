@@ -300,7 +300,7 @@ plot_ly(
   x = ~diabetes_rate, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
-  marker = list(color = "#3182bd",
+  marker = list(color = "Red",
                 line = list(color = "rgba(0,0,0,0.25)", width = 0.5))
 ) %>%
   layout(
@@ -329,7 +329,7 @@ plot_ly(
   x = ~life_expect, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
-  marker = list(color = "#3182bd",
+  marker = list(color = "Purple",
                 line = list(color = "rgba(0,0,0,0.25)", width = 0.5))
 ) %>%
   layout(
@@ -386,7 +386,7 @@ fx_custom_choropleth_map(var, map_color, map_title)
 ### Column
 ```{r}
 #| label: Histogram SDOH 1
-#| title: Histogram
+#| title: Primary Care Provider Histogram
 #| eval: true
 
 df <- community_area_data_table %>%
@@ -416,7 +416,7 @@ plot_ly(
 ### Column
 ```{r}
 #| label: Histogram SDOH 2
-#| title: Histogram
+#| title: Food Insecurity Histogram
 #| eval: true
 
 

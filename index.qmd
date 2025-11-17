@@ -430,7 +430,7 @@ plot_ly(
   x = ~food_insecure, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
-  marker = list(color = "#A63603",
+  marker = list(color = "Green",
                 line = list(color = "#FDBE85", width = 0.5))
 ) %>%
   layout(

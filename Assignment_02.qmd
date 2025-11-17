@@ -41,6 +41,7 @@ if (file.exists(file_path)) {
 
 ```
 
+
 ```{r}
 #| label: Import data from Chicago Health Atlas, create RData file
 #| eval: false
@@ -62,9 +63,9 @@ chicago_boundary <- st_read("https://data.cityofchicago.org/resource/qqq8-j68g.g
 ## BEGIN EDIT 
 # define topic, period, and population keys to extract latest data from health atlas
 # make sure that the indicators in the topic_keys_list and topic_cols_list are in the same order.
-topic_keys_list = c("VRDTHR","MEODR", "INC", "HCSNSP")
-topic_cols_list = c("all_mortality", "opioid_mortality","md_hh_income","perceived_safety")
-period_keys_list = c("2023", "2019-2023", "2023-2024")
+topic_keys_list = c("HCSDIAP", "VRLE", "HCSPCPP", "FAI")
+topic_cols_list = c("diabetes_rate", "life_expect","pcp_rate","food_insecure")
+period_keys_list = c("2023-2024", "2019-2023", "2020")
 ## END EDIT
 
 # create a rename to rename topics to more descriptive names
@@ -250,15 +251,15 @@ Description of mortality indicators, maps and charts. Include why you chose the 
 ## Row {height=60%}
 ### Column
 ```{r}
-#| label: Mortality Map 1
-#| title: All-Cause Mortality Rate (per 100,000), 2023 # EDIT HERE
+#| label: Diabetes Map 1
+#| title: Rate of Diabetes, 2023-24 # EDIT HERE
 #| eval: true
 
 # Create custom choropleth map using specified parameters
 # BEGIN EDITING
-var <- "all_mortality" # specify variable to map
-map_color <- "Blues" # specify color range for map
-map_title <- "Mortality Rate" # specify map title
+var <- "diabetes_rate" # specify variable to map
+map_color <- "Reds" # specify color range for map
+map_title <- "Diabetes Rate" # specify map title
 # STOP EDITING
 
 fx_custom_choropleth_map(var, map_color, map_title)
@@ -267,15 +268,15 @@ fx_custom_choropleth_map(var, map_color, map_title)
 
 ### Column
 ```{r}
-#| label: Mortality Map 2
-#| title: Opioid-Related Overdose Mortality Rate (per 100,000), 2023 # EDIT HERE
+#| label: Life Expectancy
+#| title: Life Expectancy, 2020  # EDIT HERE
 #| eval: true
 
 # Create custom choropleth map using specified parameters
 # BEGIN EDITING
-var <- "opioid_mortality" # specify variable to map
-map_color <- "Blues" # specify color range for map
-map_title <- "Mortality Rate" # specify map title
+var <- "life_expect" # specify variable to map
+map_color <- "Purples" # specify color range for map
+map_title <- "Life Expectancy" # specify map title
 # STOP EDITING
 
 fx_custom_choropleth_map(var, map_color, map_title)
@@ -285,18 +286,18 @@ fx_custom_choropleth_map(var, map_color, map_title)
 ## Row {height=30%}
 ### Column
 ```{r}
-#| label: Mortality Histogram 1
-#| title: Histogram
+#| label: Diabetes Histogram 1
+#| title: Diabetes Histogram
 #| eval: true
 
 df <- community_area_data_table %>%
   st_set_geometry(NULL) %>%
-  transmute(all_mortality = as.numeric(all_mortality)) %>% # EDIT HERE (two values)
-  filter(is.finite(all_mortality)) # EDIT HERE
+  transmute(diabetes_rate = as.numeric(diabetes_rate)) %>% # EDIT HERE (two values)
+  filter(is.finite(diabetes_rate)) # EDIT HERE
 
 plot_ly(
   df,
-  x = ~all_mortality, # EDIT HERE
+  x = ~diabetes_rate, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
   marker = list(color = "#3182bd",
@@ -313,26 +314,26 @@ plot_ly(
 
 ### Column
 ```{r}
-#| label: Mortality Histogram 2
-#| title: Histogram
+#| label: Life Expectancy Histogram 2
+#| title: Life Expectancy Histogram
 #| eval: true
 
 
 df <- community_area_data_table %>%
   st_set_geometry(NULL) %>%
-  transmute(opioid_mortality = as.numeric(opioid_mortality)) %>% # EDIT HERE (two values)
-  filter(is.finite(opioid_mortality)) # EDIT HERE
+  transmute(life_expect = as.numeric(life_expect)) %>% # EDIT HERE (two values)
+  filter(is.finite(life_expect)) # EDIT HERE
 
 plot_ly(
   df,
-  x = ~opioid_mortality, # EDIT HERE
+  x = ~life_expect, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
   marker = list(color = "#3182bd",
                 line = list(color = "rgba(0,0,0,0.25)", width = 0.5))
 ) %>%
   layout(
-    xaxis = list(title = "Rate (per 100,000)"),
+    xaxis = list(title = "Age"),
     yaxis = list(title = "Count"),
     bargap = 0.05,
     showlegend = FALSE
@@ -350,14 +351,14 @@ Description of social determinants of health (SDOH) indicators, maps and charts.
 ### Column
 ```{r}
 #| label: SDOH Map 1
-#| title: Median Household Income, 2019-2023 # EDIT HERE
+#| title: Primary Care Provider Rate, 2023-2024 # EDIT HERE
 #| eval: true
 
 # Create custom choropleth map using specified parameters
 # BEGIN EDITING
-var <- "md_hh_income" # specify variable to map
+var <- "pcp_rate" # specify variable to map
 map_color <- "Oranges" # specify color range for map
-map_title <- "Household Income" # specify map title
+map_title <- "Primary Care Physician Rate" # specify map title
 # STOP EDITING
 
 fx_custom_choropleth_map(var, map_color, map_title)
@@ -367,14 +368,14 @@ fx_custom_choropleth_map(var, map_color, map_title)
 ### Column
 ```{r}
 #| label: SDOH Map 2
-#| title: "Perceived Neighborhood Safety Rate, 2023-2024" # EDIT HERE
+#| title: "Food Insecurity Rate, 2020" # EDIT HERE
 #| eval: true
 
 # Create custom choropleth map using specified parameters
 # BEGIN EDITING
-var <- "perceived_safety" # specify variable to map
-map_color <- "Oranges" # specify color range for map
-map_title <- "Perceived Safety" # specify map title
+var <- "food_insecure" # specify variable to map
+map_color <- "Greens" # specify color range for map
+map_title <- "Food Insecurity" # specify map title
 # STOP EDITING
 
 fx_custom_choropleth_map(var, map_color, map_title)
@@ -390,19 +391,19 @@ fx_custom_choropleth_map(var, map_color, map_title)
 
 df <- community_area_data_table %>%
   st_set_geometry(NULL) %>%
-  transmute(md_hh_income = as.numeric(md_hh_income)) %>% # EDIT HERE  (two values)
-  filter(is.finite(md_hh_income)) # EDIT HERE
+  transmute(pcp_rate = as.numeric(pcp_rate)) %>% # EDIT HERE  (two values)
+  filter(is.finite(pcp_rate)) # EDIT HERE
 
 plot_ly(
   df,
-  x = ~md_hh_income, # EDIT HERE
+  x = ~pcp_rate, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
   marker = list(color = "#A63603",
                 line = list(color = "#FDBE85", width = 0.5))
 ) %>%
   layout(
-    xaxis = list(title = "Income"), # EDIT HERE
+    xaxis = list(title = "Primary Care Rate"), # EDIT HERE
     yaxis = list(title = "Count"),
     bargap = 0.05,
     showlegend = FALSE
@@ -421,19 +422,19 @@ plot_ly(
 
 df <- community_area_data_table %>%
   st_set_geometry(NULL) %>%
-  transmute(perceived_safety = as.numeric(perceived_safety)) %>% # EDIT HERE (two values)
-  filter(is.finite(perceived_safety)) # EDIT HERE
+  transmute(food_insecure = as.numeric(food_insecure)) %>% # EDIT HERE (two values)
+  filter(is.finite(food_insecure)) # EDIT HERE
 
 plot_ly(
   df,
-  x = ~perceived_safety, # EDIT HERE
+  x = ~food_insecure, # EDIT HERE
   type = "histogram",
   nbinsx = 20,
   marker = list(color = "#A63603",
                 line = list(color = "#FDBE85", width = 0.5))
 ) %>%
   layout(
-    xaxis = list(title = "Rate (%)"), # EDIT HERE
+    xaxis = list(title = "Food Insecurity Rate (%)"), # EDIT HERE
     yaxis = list(title = "Count"),
     bargap = 0.05,
     showlegend = FALSE
@@ -449,7 +450,7 @@ plot_ly(
 #| echo: false
 
 # select relevant variables for spatial analysis
-vars <- c("all_mortality", "opioid_mortality", "md_hh_income", "perceived_safety") # EDIT HERE
+vars <- c("diabetes_rate", "life_expect", "pcp_rate", "food_insecure") # EDIT HERE
 
 ```
 
@@ -529,7 +530,7 @@ plot_ly(global_moran_tbl,
 #| echo: false
 
 # Create custom LISA map using specified variable
-var = "all_mortality"  # EDIT HERE: choose one variable from vars
+var = "diabetes_rate"  # EDIT HERE: choose one variable from vars
 
 # Execute custom LISA map function
 fx_custom_lisa_map(var) 
@@ -537,12 +538,12 @@ fx_custom_lisa_map(var)
 ```
 
 ```{r}
-#| title: Opioid Mortality 
+#| title: Life Expectancy
 #| eval: true
 #| echo: false
 
 # Create custom LISA map using specified variable
-var = "opioid_mortality"  # EDIT HERE: choose one variable from vars
+var = "life_expect"  # EDIT HERE: choose one variable from vars
 
 # Execute custom LISA map function
 fx_custom_lisa_map(var) 
@@ -550,12 +551,12 @@ fx_custom_lisa_map(var)
 ```
 
 ```{r}
-#| title: Household Income
+#| title: Primary Care Physician Rate
 #| eval: true
 #| echo: false
 
 # Create custom LISA map using specified variable
-var = "md_hh_income"  # EDIT HERE: choose one variable from vars
+var = "pcp_rate"  # EDIT HERE: choose one variable from vars
 
 # Execute custom LISA map function
 fx_custom_lisa_map(var) 
@@ -563,12 +564,12 @@ fx_custom_lisa_map(var)
 ```
 
 ```{r}
-#| title: Perceived Safety
+#| title: Food Insecurity
 #| eval: true
 #| echo: false
 
 # Create custom LISA map using specified variable
-var = "perceived_safety"  # EDIT HERE: choose one variable from vars
+var = "food_insecure"  # EDIT HERE: choose one variable from vars
 
 # Execute custom LISA map function
 fx_custom_lisa_map(var) 
